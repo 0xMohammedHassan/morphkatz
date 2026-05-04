@@ -1,0 +1,30 @@
+{
+    "version": "0.1.0",
+    "description": "Polymorphic machine-code rewriter for Windows x64 binaries",
+    "homepage": "https://github.com/0xMohammedHassan/morphkatz",
+    "license": "AGPL-3.0-or-later",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/0xMohammedHassan/morphkatz/releases/download/v0.1.0/morphkatz-v0.1.0-win-x64.zip",
+            "hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+    },
+    "bin": "morphkatz.exe",
+    "env_set": {
+        "MORPHKATZ_RULES_DIR": "$dir\\rules"
+    },
+    "checkver": {
+        "github": "https://github.com/0xMohammedHassan/morphkatz"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/0xMohammedHassan/morphkatz/releases/download/v$version/morphkatz-v$version-win-x64.zip"
+            }
+        }
+    },
+    "notes": [
+        "MorphKatz ships a curated rule pack under $dir\\rules.",
+        "Set --rules <dir> on the command line to point at a custom pack."
+    ]
+}

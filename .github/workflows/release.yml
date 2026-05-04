@@ -1,0 +1,61 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with: { arch: x64 }
+
+      - uses: lukka/run-vcpkg@v11
+        with: { vcpkgGitCommitId: '2026.03.11', runVcpkgInstall: false }
+
+      - name: Configure
+        run: cmake --preset vs2022-x64
+
+      - name: Build Release
+        run: cmake --build --preset vs2022-x64-release --parallel
+
+      - name: Test
+        run: ctest --preset vs2022-x64-release --output-on-failure
+
+      - name: Stage release tree
+        shell: pwsh
+        run: |
+          $stage = "$PWD\stage\morphkatz"
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          Copy-Item -Recurse -Force build/vs2022-x64/Release/morphkatz.exe $stage/
+          Copy-Item -Recurse -Force build/vs2022-x64/Release/morphkatz.pdb $stage/ -ErrorAction SilentlyContinue
+          Copy-Item -Recurse -Force rules                                  $stage/rules
+          Copy-Item -Recurse -Force docs                                   $stage/docs
+          Copy-Item -Force README.md                                       $stage/
+          Copy-Item -Force LICENSE                                         $stage/
+          Copy-Item -Force NOTICE                                          $stage/
+          Copy-Item -Force RESPONSIBLE_USE.md                              $stage/
+          Compress-Archive -Path $stage\* -DestinationPath "$PWD\morphkatz-${{ github.ref_name }}-win-x64.zip" -Force
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: morphkatz-${{ github.ref_name }}-win-x64.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') }}
+
+      - name: Compute SHA256 (for Scoop/Choco bump)
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash "morphkatz-${{ github.ref_name }}-win-x64.zip" -Algorithm SHA256).Hash
+          "hash=$hash" | Out-File -Append $env:GITHUB_OUTPUT
+          "`n[release] sha256 = $hash" | Write-Host

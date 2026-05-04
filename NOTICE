@@ -1,0 +1,39 @@
+MorphKatz — polymorphic machine-code rewriter for Windows x64 binaries
+Copyright (c) 2026 0xMohammedHassan and MorphKatz contributors
+
+Licensed under the GNU Affero General Public License, Version 3.0.
+See LICENSE in the root of this repository, or
+https://www.gnu.org/licenses/agpl-3.0.html.
+
+================================================================================
+THIRD-PARTY COMPONENTS
+================================================================================
+
+This software links, at the user's option, against the following libraries.
+Each is used under its own upstream licence; source and licence text are
+retrieved automatically via vcpkg manifest mode (`vcpkg.json`).
+
+  Zydis              MIT            https://github.com/zyantific/zydis
+  LIEF               Apache-2.0     https://github.com/lief-project/LIEF
+  CLI11              BSD-3-Clause   https://github.com/CLIUtils/CLI11
+  spdlog             MIT            https://github.com/gabime/spdlog
+  fmt                MIT            https://github.com/fmtlib/fmt
+  yaml-cpp           MIT            https://github.com/jbeder/yaml-cpp
+  nlohmann_json      MIT            https://github.com/nlohmann/json
+  libyara            BSD-3-Clause   https://github.com/VirusTotal/yara (optional)
+  Unicorn Engine     GPL-2.0        https://github.com/unicorn-engine/unicorn (optional)
+  Catch2             BSL-1.0        https://github.com/catchorg/Catch2 (tests only)
+
+Note: Unicorn Engine is GPL-2.0. Building MorphKatz with
+-DMORPHKATZ_WITH_UNICORN=ON links GPL-2.0 code into the AGPL-3.0 MorphKatz
+binary, which is compatible under the "GPL-2.0 or later" compatibility
+clause. Build with -DMORPHKATZ_WITH_UNICORN=OFF to drop the dependency.
+
+================================================================================
+SECURITY / RESPONSIBLE USE
+================================================================================
+
+See RESPONSIBLE_USE.md and SECURITY.md for guidance on authorised use and
+vulnerability reporting.  MorphKatz is a defensive-research tool; operators are
+responsible for complying with local computer-misuse law and any written
+rules-of-engagement for the systems they test.

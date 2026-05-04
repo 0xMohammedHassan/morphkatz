@@ -1,0 +1,212 @@
+name: ci
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+  VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
+  VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static-md
+
+jobs:
+  dco:
+    # Enforce that every commit on a pull request carries a Signed-off-by
+    # trailer (Developer Certificate of Origin). See CONTRIBUTING.md for
+    # the policy. Pushes to main are exempt because by definition they
+    # have already passed this gate via PR.
+    name: DCO sign-off
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout PR branch (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Verify Signed-off-by on every commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          missing=0
+          while IFS= read -r sha; do
+            msg=$(git log --format=%B -n 1 "$sha")
+            if ! echo "$msg" | grep -qiE '^Signed-off-by: [^<]+ <[^@]+@[^>]+>$'; then
+              echo "::error::commit $sha is missing a Signed-off-by trailer."
+              echo "         re-run: git commit --amend -s --no-edit"
+              echo "         or:     git rebase --signoff $base"
+              missing=$((missing + 1))
+            fi
+          done < <(git rev-list "$base".."$head")
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::$missing commit(s) missing Signed-off-by. See CONTRIBUTING.md."
+            exit 1
+          fi
+          echo "All commits carry a valid Signed-off-by trailer."
+
+  build:
+    name: ${{ matrix.preset }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - preset: vs2022-x64
+            build:  vs2022-x64-release
+            test:   vs2022-x64-release
+          - preset: vs2022-x64
+            build:  vs2022-x64-debug
+            test:   vs2022-x64-debug
+          - preset: vs2022-x64-asan
+            build:  vs2022-x64-asan
+            test:   vs2022-x64-asan
+          - preset: ninja-x64-release
+            build:  ninja-x64-release
+            test:   ninja-x64-release
+          - preset: clang-cl-asan
+            build:  clang-cl-asan
+            test:   clang-cl-asan
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Enable Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '2026.03.11'
+          runVcpkgInstall: false
+
+      - name: Cache vcpkg binary artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.VCPKG_ROOT }}/buildtrees
+            ${{ env.VCPKG_ROOT }}/downloads
+            ${{ env.VCPKG_ROOT }}/packages
+          key: vcpkg-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('vcpkg.json','vcpkg-configuration.json') }}
+
+      - name: Configure
+        shell: pwsh
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build --preset ${{ matrix.build }} --parallel
+
+      - name: Test
+        shell: pwsh
+        # The `requires-defender` tests need Microsoft Defender plus
+        # workspace exclusions which are configured in a dedicated job
+        # below; default builds skip them via label exclusion.
+        run: ctest --preset ${{ matrix.test }} --output-on-failure --label-exclude requires-defender
+
+      - name: morphkatz --version smoke
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Recurse -Filter morphkatz.exe -Path build | Select-Object -First 1
+          if (-not $exe) { throw "morphkatz.exe not produced" }
+          & $exe.FullName --version
+          & $exe.FullName --help
+
+      - name: Upload artifacts (release builds only)
+        if: matrix.build == 'vs2022-x64-release' || matrix.build == 'ninja-x64-release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: morphkatz-${{ matrix.preset }}
+          path: |
+            build/${{ matrix.preset }}/**/morphkatz.exe
+            build/${{ matrix.preset }}/**/*.pdb
+          if-no-files-found: warn
+
+  defender-smoke:
+    name: defender-smoke (Tier-1 EICAR + scan subcommand)
+    runs-on: windows-latest
+    needs: build
+    # Defender isn't available everywhere (self-hosted runners,
+    # container jobs, ARM, etc.) and the test result depends on
+    # transient signature DB state. Mark continue-on-error so a
+    # transient skip doesn't block the merge gate.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: ilammy/msvc-dev-cmd@v1
+        with: { arch: x64 }
+      - uses: lukka/run-vcpkg@v11
+        with: { vcpkgGitCommitId: '2026.03.11', runVcpkgInstall: false }
+
+      - name: Pre-configure Defender for the workspace
+        shell: pwsh
+        run: |
+          # Add the workspace + temp dirs as exclusions so RTP doesn't
+          # quarantine our test inputs between write and scan. We
+          # deliberately do NOT disable RTP/MAPS globally; the scanner
+          # operates with --no-strict-preconditions on this runner.
+          Add-MpPreference -ExclusionPath "$env:RUNNER_TEMP" -ErrorAction SilentlyContinue
+          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE" -ErrorAction SilentlyContinue
+          Get-MpPreference | Format-List | Out-String | Write-Host
+
+      - name: Configure
+        run: cmake --preset vs2022-x64
+
+      - name: Build
+        run: cmake --build --preset vs2022-x64-debug --parallel
+
+      - name: Run requires-defender tests
+        shell: pwsh
+        run: |
+          ctest --preset vs2022-x64-debug --output-on-failure --label-regex requires-defender
+
+      - name: scan subcommand smoke (no input -> exit 1)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $exe = Get-ChildItem -Recurse -Filter morphkatz.exe -Path build | Select-Object -First 1
+          & $exe.FullName scan --help
+
+      - name: Cleanup Defender exclusions
+        if: always()
+        shell: pwsh
+        run: |
+          Remove-MpPreference -ExclusionPath "$env:RUNNER_TEMP" -ErrorAction SilentlyContinue
+          Remove-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE" -ErrorAction SilentlyContinue
+
+  fuzz-smoke:
+    name: fuzz-smoke (clang-cl libFuzzer, 60s)
+    runs-on: windows-latest
+    needs: build
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+        with: { arch: x64 }
+      - uses: lukka/run-vcpkg@v11
+        with: { vcpkgGitCommitId: '2026.03.11', runVcpkgInstall: false }
+      - name: Configure (clang-cl libFuzzer)
+        run: cmake --preset clang-cl-asan -DMORPHKATZ_BUILD_FUZZ=ON
+      - name: Build fuzzer
+        run: cmake --build --preset clang-cl-asan --target fuzz_rule_matcher
+      - name: Run 60s smoke fuzz
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Recurse -Filter fuzz_rule_matcher.exe -Path build | Select-Object -First 1
+          & $exe.FullName -max_total_time=60 -print_final_stats=1

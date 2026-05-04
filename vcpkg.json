@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "morphkatz",
+  "version-string": "0.1.0",
+  "description": "State-of-the-art polymorphic machine-code rewriter for Windows x64 binaries and shellcode.",
+  "homepage": "https://github.com/0xMohammedHassan/morphkatz",
+  "license": "AGPL-3.0-or-later",
+  "supports": "windows & x64",
+  "builtin-baseline": "9c5e11404ae278262988dfe71628b3da657ead81",
+  "dependencies": [
+    "zydis",
+    "lief",
+    "cli11",
+    "spdlog",
+    "fmt",
+    "yaml-cpp",
+    "nlohmann-json",
+    "catch2",
+    "openssl"
+  ],
+  "features": {
+    "yara": {
+      "description": "Enable --target <rules.yar> YARA-guided mode",
+      "dependencies": [ "yara" ]
+    },
+    "unicorn": {
+      "description": "Enable --verify=unicorn basic-block emulation",
+      "dependencies": [ "unicorn" ]
+    },
+    "hyperscan": {
+      "description": "Optional SIMD byte-pattern matcher (MORPHKATZ_WITH_HYPERSCAN)",
+      "dependencies": [ "hyperscan" ]
+    },
+    "bench": {
+      "description": "Micro-benchmark harness",
+      "dependencies": [ "benchmark" ]
+    }
+  },
+  "default-features": [ "yara", "unicorn" ]
+}

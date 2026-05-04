@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="morphkatz::Error">
+    <DisplayString Condition="kind == morphkatz::ErrorKind::Ok">Ok</DisplayString>
+    <DisplayString>{{ kind={kind,en} what="{what,sb}" where="{where,sb}" }}</DisplayString>
+    <Expand>
+      <Item Name="kind">kind</Item>
+      <Item Name="what">what</Item>
+      <Item Name="where">where</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="morphkatz::Result&lt;*&gt;">
+    <DisplayString Condition="data_._Which == 0">Ok({std::get&lt;0&gt;(data_)})</DisplayString>
+    <DisplayString>Err({std::get&lt;1&gt;(data_)})</DisplayString>
+  </Type>
+
+  <Type Name="morphkatz::ir::Instruction">
+    <DisplayString>{{ va=0x{va,X} len={length} mnemonic={mnemonic,en} ops={op_count} }}</DisplayString>
+    <Expand>
+      <Item Name="va">va</Item>
+      <Item Name="file_off">file_off</Item>
+      <Item Name="length">length</Item>
+      <Item Name="mnemonic">mnemonic</Item>
+      <Item Name="op_count">op_count</Item>
+      <Item Name="flags">flags</Item>
+      <ArrayItems>
+        <Size>op_count</Size>
+        <ValuePointer>ops._Elems</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="morphkatz::ir::FlagsEffect">
+    <DisplayString>{{ tested=0x{tested,X} modified=0x{modified,X} set0=0x{set_to_0,X} set1=0x{set_to_1,X} undef=0x{undefined,X} }}</DisplayString>
+  </Type>
+
+</AutoVisualizer>

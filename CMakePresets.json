@@ -1,0 +1,117 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "_base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
+        "VCPKG_HOST_TRIPLET":   "x64-windows-static-md"
+      },
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+
+    {
+      "name": "vs2022-x64",
+      "displayName": "Visual Studio 2022 (x64, .sln)",
+      "description": "Classic solution+vcxproj generator. Open MorphKatz.sln after configure.",
+      "inherits": "_base",
+      "generator": "Visual Studio 17 2022",
+      "architecture": { "value": "x64", "strategy": "set" },
+      "toolset":      { "value": "v143", "strategy": "set" }
+    },
+
+    {
+      "name": "vs2022-x64-asan",
+      "displayName": "Visual Studio 2022 (x64, ASan)",
+      "description": "Same as vs2022-x64 with MSVC /fsanitize=address. CI.",
+      "inherits": "vs2022-x64",
+      "cacheVariables": {
+        "MORPHKATZ_ENABLE_ASAN": "ON"
+      }
+    },
+
+    {
+      "name": "ninja-x64-release",
+      "displayName": "Ninja x64 Release",
+      "inherits": "_base",
+      "generator": "Ninja",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+
+    {
+      "name": "ninja-x64-debug",
+      "displayName": "Ninja x64 Debug",
+      "inherits": "_base",
+      "generator": "Ninja",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+
+    {
+      "name": "clang-cl-asan",
+      "displayName": "clang-cl + ASan/UBSan",
+      "description": "clang-cl with ASan + UBSan. CI.",
+      "inherits": "_base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER":   "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_BUILD_TYPE":   "RelWithDebInfo",
+        "MORPHKATZ_ENABLE_ASAN":  "ON",
+        "MORPHKATZ_ENABLE_UBSAN": "ON"
+      }
+    }
+  ],
+
+  "buildPresets": [
+    { "name": "vs2022-x64-debug",          "configurePreset": "vs2022-x64",       "configuration": "Debug" },
+    { "name": "vs2022-x64-release",        "configurePreset": "vs2022-x64",       "configuration": "Release" },
+    { "name": "vs2022-x64-relwithdebinfo", "configurePreset": "vs2022-x64",       "configuration": "RelWithDebInfo" },
+    { "name": "vs2022-x64-asan",           "configurePreset": "vs2022-x64-asan",  "configuration": "Debug" },
+    { "name": "ninja-x64-release",         "configurePreset": "ninja-x64-release" },
+    { "name": "ninja-x64-debug",           "configurePreset": "ninja-x64-debug" },
+    { "name": "clang-cl-asan",             "configurePreset": "clang-cl-asan" }
+  ],
+
+  "testPresets": [
+    {
+      "name": "vs2022-x64-debug",
+      "configurePreset": "vs2022-x64",
+      "configuration": "Debug",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "stopOnFailure": false }
+    },
+    {
+      "name": "vs2022-x64-release",
+      "configurePreset": "vs2022-x64",
+      "configuration": "Release",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "vs2022-x64-asan",
+      "configurePreset": "vs2022-x64-asan",
+      "configuration": "Debug",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "stopOnFailure": false }
+    },
+    {
+      "name": "ninja-x64-release",
+      "configurePreset": "ninja-x64-release",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "ninja-x64-debug",
+      "configurePreset": "ninja-x64-debug",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "clang-cl-asan",
+      "configurePreset": "clang-cl-asan",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}

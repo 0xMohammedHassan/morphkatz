@@ -1,0 +1,16 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 27, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "my-dev",
+      "inherits": "vs2022-x64",
+      "environment": {
+        "VCPKG_ROOT": "C:/src/vcpkg"
+      },
+      "cacheVariables": {
+        "MORPHKATZ_BUILD_BENCH": "ON"
+      }
+    }
+  ]
+}

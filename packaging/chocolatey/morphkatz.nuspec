@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>morphkatz</id>
+    <version>0.1.0</version>
+    <title>MorphKatz</title>
+    <authors>lainkusanagi</authors>
+    <owners>lainkusanagi</owners>
+    <licenseUrl>https://github.com/lainkusanagi/morphkatz/blob/main/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/lainkusanagi/morphkatz</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <summary>Polymorphic machine-code rewriter for Windows x64 binaries</summary>
+    <description>
+MorphKatz rewrites Windows PE binaries using semantic-preserving instruction
+substitutions, breaking byte-level signatures without altering program
+behaviour. Written in modern C++/Win32 with CMake and vcpkg.
+    </description>
+    <tags>pe binary disassembly polymorphism yara security research</tags>
+    <releaseNotes>See https://github.com/lainkusanagi/morphkatz/releases</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

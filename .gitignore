@@ -1,0 +1,68 @@
+# Build outputs
+build/
+out/
+bin/
+lib/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+
+# Visual Studio
+.vs/
+!.vs/launch.vs.json
+*.user
+*.suo
+*.sln.docstates
+*.vcxproj.user
+*.vcxproj.filters.user
+x64/
+x86/
+Debug/
+Release/
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.obj
+*.opendb
+*.db
+
+# CMake generated
+MorphKatz.sln
+MorphKatz.vcxproj
+MorphKatz.vcxproj.filters
+CMakeUserPresets.json
+CMakeSettings.json
+
+# vcpkg
+vcpkg_installed/
+.vcpkg-root
+
+# IDE
+.idea/
+.vscode/
+!.vscode/tasks.json
+!.vscode/launch.json
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Test outputs
+Testing/
+*.gcda
+*.gcno
+coverage.info
+coverage/
+
+# Artifacts
+*.zip
+*.tar.gz
+*.msi
+*.nupkg
+*.msix
