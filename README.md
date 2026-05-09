@@ -464,7 +464,7 @@ third-party licence list.
 ---
 
 <sub>This codebase grew out of an earlier Python research prototype
-([Beatrice.py](https://github.com/lainkusanagi/Beatrice.py)). MorphKatz
+([Beatrice.py](https://github.com/raskolnikov90/Beatrice.py)). MorphKatz
 is an independent C++20 reimplementation — different disassembler,
 different encoder, different IR, external YAML rule packs, and many
 engines (CFG recovery, EFLAGS liveness, Unicorn verify, YARA targeting,
